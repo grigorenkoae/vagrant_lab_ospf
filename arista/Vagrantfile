@@ -1,0 +1,69 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+
+Vagrant.configure("2") do |config|
+
+
+
+  config.vm.define 'r1' do |r1|
+    r1.vm.box = "vEOS"
+    r1.vm.network "private_network", virtualbox__intnet: 'link1',
+                       auto_config: false
+    r1.vm.network "private_network", virtualbox__intnet: 'link2',
+                       auto_config: false
+    r1.vm.network "private_network", virtualbox__intnet: 'host1',
+                       auto_config: false
+  end
+
+
+
+  config.vm.define 'r2' do |r2|
+    r2.vm.box = "vEOS"
+    r2.vm.network "private_network", virtualbox__intnet: 'link1',
+                       auto_config: false
+    r2.vm.network "private_network", virtualbox__intnet: 'link2',
+                       auto_config: false
+    r2.vm.network "private_network", virtualbox__intnet: 'host2',
+                       auto_config: false
+  end
+
+
+
+  config.vm.define 'h1' do |h1|
+    h1.vm.box = "minimal/trusty64"
+    h1.vm.network "private_network", virtualbox__intnet: 'host1',
+                  nic_type: '82540EM', ip: '192.168.1.1'
+    h1.vm.provision 'shell', inline: <<-SHELL
+    route add -net 192.168.0.0 netmask 255.255.0.0 gw 192.168.1.254
+    SHELL
+  end
+
+
+
+  config.vm.define 'h2' do |h2|
+    h2.vm.box = "minimal/trusty64"
+    h2.vm.network "private_network", virtualbox__intnet: 'host2',
+                  nic_type: '82540EM', ip: '192.168.2.1'
+    h2.vm.provision 'shell', inline: <<-SHELL
+    route add -net 192.168.0.0 netmask 255.255.0.0 gw 192.168.2.254
+    SHELL
+  end
+
+
+
+  if !Vagrant::Util::Platform.windows?
+    config.vm.provision "ansible" do |ansible|
+      ansible.playbook = "arista_config.yml"
+      ansible.groups = {
+        "routers"          => ["r1","r2",],
+        "hosts"            => ["h1","h2",],
+        "all:children" => ["routers","hosts",]
+      }
+    end
+  end
+
+
+
+end

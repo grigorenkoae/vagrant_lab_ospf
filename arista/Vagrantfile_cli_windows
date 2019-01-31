@@ -1,0 +1,122 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+
+Vagrant.configure("2") do |config|
+
+
+
+  config.vm.define 'r1' do |r1|
+    r1.vm.box = "vEOS"
+    r1.vm.network "private_network", virtualbox__intnet: 'link1',
+                       auto_config: false
+    r1.vm.network "private_network", virtualbox__intnet: 'link2',
+                       auto_config: false
+    r1.vm.network "private_network", virtualbox__intnet: 'host1',
+                       auto_config: false
+    r1.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--uart1", "0x3f8", "4"]
+      vb.customize ["modifyvm", :id, "--uartmode1", "server", "\\\\\.\\pipe\\r1"]
+    end
+    r1.vm.provision 'shell', inline: <<-SHELL
+      sleep 3
+      FastCli -p 15 -c "configure
+      hostname r1
+      interface Ethernet1
+         description link1
+         no switchport
+         ip address 192.168.101.1/30
+         ip ospf network point-to-point
+         ip ospf cost 1
+      interface Ethernet2
+         description link2
+         no switchport
+         ip address 192.168.102.1/30
+         ip ospf network point-to-point
+         ip ospf cost 1
+      interface Ethernet3
+         description host1
+         no switchport
+         ip address 192.168.1.254/24
+      interface Loopback1
+         ip address 1.1.1.1/32
+      ip routing
+      router ospf 1
+         router-id 1.1.1.1
+         redistribute connected
+         network 192.168.101.1/32 area 0.0.0.0
+         network 192.168.102.1/32 area 0.0.0.1"
+    SHELL
+  end
+
+
+
+  config.vm.define 'r2' do |r2|
+    r2.vm.box = "vEOS"
+    r2.vm.network "private_network", virtualbox__intnet: 'link1',
+                       auto_config: false
+    r2.vm.network "private_network", virtualbox__intnet: 'link2',
+                       auto_config: false
+    r2.vm.network "private_network", virtualbox__intnet: 'host2',
+                       auto_config: false
+    r2.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--uart1", "0x3f8", "4"]
+      vb.customize ["modifyvm", :id, "--uartmode1", "server", "\\\\\.\\pipe\\r2"]
+    end
+    r2.vm.provision 'shell', inline: <<-SHELL
+    sleep 3
+    FastCli -p 15 -c "configure
+    hostname r2
+    interface Ethernet1
+       description link1
+       no switchport
+       ip address 192.168.101.2/30
+       ip ospf network point-to-point
+       ip ospf cost 1
+    interface Ethernet2
+       description link2
+       no switchport
+       ip address 192.168.102.2/30
+       ip ospf network point-to-point
+       ip ospf cost 1
+    interface Ethernet3
+       description host2
+       no switchport
+       ip address 192.168.2.254/24
+    interface Loopback1
+         ip address 2.2.2.2/32
+    ip routing
+    router ospf 1
+       router-id 2.2.2.2
+       redistribute connected
+       network 192.168.101.2/32 area 0.0.0.0
+       network 192.168.102.2/32 area 0.0.0.1"
+    SHELL
+  end
+
+
+
+  config.vm.define 'h1' do |h1|
+    h1.vm.box = "minimal/trusty64"
+    h1.vm.network "private_network", virtualbox__intnet: 'host1',
+                  nic_type: '82540EM', ip: '192.168.1.1'
+    h1.vm.provision 'shell', inline: <<-SHELL
+    route add -net 192.168.0.0 netmask 255.255.0.0 gw 192.168.1.254
+    SHELL
+  end
+
+
+
+  config.vm.define 'h2' do |h2|
+    h2.vm.box = "minimal/trusty64"
+    h2.vm.network "private_network", virtualbox__intnet: 'host2',
+                  nic_type: '82540EM', ip: '192.168.2.1'
+    h2.vm.provision 'shell', inline: <<-SHELL
+    route add -net 192.168.0.0 netmask 255.255.0.0 gw 192.168.2.254
+    SHELL
+  end
+
+
+
+end

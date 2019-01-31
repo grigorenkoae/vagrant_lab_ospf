@@ -1,0 +1,12 @@
+---
+# This playbook will generate and apply configuration to all routers
+
+- name: Generate and apply configuration
+  hosts: routers
+
+  tasks:
+    - name: Deploy config to device ... please wait
+      eos_config:
+        src: "templates/arista.conf.j2"
+        save_when: changed
+        match: none

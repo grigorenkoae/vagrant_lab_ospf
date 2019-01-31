@@ -1,0 +1,59 @@
+r1
+
+hostname r1
+      interface Ethernet1
+         description link1
+         no switchport
+         ip address 192.168.101.1/30
+         ip ospf network point-to-point
+         ip ospf cost 1
+      interface Ethernet2
+         description link2
+         no switchport
+         ip address 192.168.102.1/30
+         ip ospf network point-to-point
+         ip ospf cost 1
+      interface Ethernet3
+         description host1
+         no switchport
+         ip address 192.168.1.254/24
+      interface Loopback1
+         ip address 1.1.1.1/32
+      ip routing
+      router ospf 1
+         router-id 1.1.1.1
+         redistribute connected
+         network 192.168.101.1/32 area 0.0.0.0
+         network 192.168.102.1/32 area 0.0.0.1
+
+
+
+r2
+
+hostname r2
+    interface Ethernet1
+       description link1
+       no switchport
+       ip address 192.168.101.2/30
+       ip ospf network point-to-point
+       ip ospf cost 1
+    interface Ethernet2
+       description link2
+       no switchport
+       ip address 192.168.102.2/30
+       ip ospf network point-to-point
+       ip ospf cost 1
+    interface Ethernet3
+       description host2
+       no switchport
+       ip address 192.168.2.254/24
+    interface Loopback1
+         ip address 2.2.2.2/32
+    ip routing
+    router ospf 1
+       router-id 2.2.2.2
+       redistribute connected
+       network 192.168.101.2/32 area 0.0.0.0
+       network 192.168.102.2/32 area 0.0.0.1
+
+

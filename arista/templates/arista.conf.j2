@@ -1,0 +1,26 @@
+
+hostname {{ hostname }}
+ip routing
+router ospf 1
+   redistribute connected
+
+{% for interface in interfaces %}
+interface {{ interface.name }}
+{% if interface.description is defined %}
+   description {{ interface.description }}
+{% endif %}
+{% if interface.ip is defined %}
+{% if not interface.name == "lo0" %}
+   no switchport
+{% endif %}
+   ip address {{ interface.ip }}
+{% endif %}
+{% if interface.ospf_cost is defined %}
+   ip ospf cost {{ interface.ospf_cost }}
+   ip ospf network point-to-point
+{% endif %}
+{% if interface.ospf_area is defined %}
+router ospf 1
+   network {{ interface.ip }} area {{ interface.ospf_area }}
+{% endif %}
+{% endfor %}
