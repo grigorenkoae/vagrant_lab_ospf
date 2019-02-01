@@ -1,0 +1,83 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.ssh.insert_key = false
+
+  config.vm.define 'r1' do |r1|
+    r1.vm.box = "juniper/vqfx10k-re"
+    # DO NOT REMOVE / NO VMtools installed
+    r1.vm.synced_folder '.', '/vagrant', disabled: true
+    # Management port (em1 / em2)
+    r1.vm.network 'private_network', auto_config: false, nic_type: '82540EM', 
+                   virtualbox__intnet: "vqfx_internal_1"
+    r1.vm.network 'private_network', auto_config: false, nic_type: '82540EM', 
+                   virtualbox__intnet: "reserved-bridge"
+    # Dataplane ports (em3-em6)
+    r1.vm.network "private_network", auto_config: false, nic_type: '82540EM', 
+                   virtualbox__intnet: "link1"
+    r1.vm.network "private_network", auto_config: false, nic_type: '82540EM', 
+                   virtualbox__intnet: "em4-empty"
+    r1.vm.network "private_network", auto_config: false, nic_type: '82540EM', 
+                   virtualbox__intnet: "link2"
+    r1.vm.network "private_network", auto_config: false, nic_type: '82540EM', 
+                   virtualbox__intnet: "host1"
+  end
+    
+ 
+  config.vm.define 'r2' do |r2|
+    r2.vm.box = "juniper/vqfx10k-re"
+    # DO NOT REMOVE / NO VMtools installed
+    r2.vm.synced_folder '.', '/vagrant', disabled: true
+    # Management port (em1 / em2)
+    r2.vm.network 'private_network', auto_config: false, nic_type: '82540EM', 
+                   virtualbox__intnet: "vqfx_internal_2"
+    r2.vm.network 'private_network', auto_config: false, nic_type: '82540EM', 
+                   virtualbox__intnet: "reserved-bridge"
+    # Dataplane ports (em3-em6)
+    r2.vm.network "private_network", auto_config: false, nic_type: '82540EM', 
+                   virtualbox__intnet: "link1"
+    r2.vm.network "private_network", auto_config: false, nic_type: '82540EM', 
+                   virtualbox__intnet: "em4-empty"
+    r2.vm.network "private_network", auto_config: false, nic_type: '82540EM', 
+                   virtualbox__intnet: "link2"
+    r2.vm.network "private_network", auto_config: false, nic_type: '82540EM', 
+                   virtualbox__intnet: "host2"
+  end
+
+
+
+  
+  config.vm.define 'h1' do |h1|
+    h1.vm.box = "minimal/trusty64"
+    h1.vm.network "private_network", virtualbox__intnet: 'host1',
+                  nic_type: '82540EM', ip: '192.168.1.1'
+    h1.vm.provision 'shell', inline: <<-SHELL
+    route add -net 192.168.0.0 netmask 255.255.0.0 gw 192.168.1.254
+    SHELL
+  end
+
+
+
+  config.vm.define 'h2' do |h2|
+    h2.vm.box = "minimal/trusty64"
+    h2.vm.network "private_network", virtualbox__intnet: 'host2',
+                  nic_type: '82540EM', ip: '192.168.2.1'
+    h2.vm.provision 'shell', inline: <<-SHELL
+    route add -net 192.168.0.0 netmask 255.255.0.0 gw 192.168.2.254
+    SHELL
+  end
+
+
+
+  if !Vagrant::Util::Platform.windows?
+    config.vm.provision "ansible" do |ansible|
+      ansible.playbook = "juniper_config.yml"
+      ansible.groups = {
+        "routers"          => ["r1","r2",],
+        "hosts"            => ["h1","h2",],
+        "all:children" => ["routers","hosts",]
+      }
+    end
+  end
+end

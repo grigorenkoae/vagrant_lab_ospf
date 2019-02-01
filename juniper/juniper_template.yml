@@ -1,0 +1,11 @@
+
+- name: Generate and Deploy Configuration
+  hosts: routers
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: Generating config...
+      template:
+        src: "templates/juniper.conf.j2"
+        dest: config_{{hostname}}.tmp

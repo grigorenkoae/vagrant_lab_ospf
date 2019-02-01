@@ -1,0 +1,12 @@
+
+- name: Generate and Deploy Configuration
+  hosts: routers
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: Deploy config to device ... please wait
+      ansible_user: vagrant
+      junos_config:
+        src: "templates/juniper.conf.j2"
+        src_format: text

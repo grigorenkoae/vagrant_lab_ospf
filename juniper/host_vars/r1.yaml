@@ -1,0 +1,20 @@
+
+hostname: r1
+
+interfaces:
+  - name: lo0
+    description: Loopback
+    ip: 1.1.1.1/32
+  - name: em3
+    description: link1
+    ip: 192.168.101.1/30
+    ospf_area: 0
+    ospf_cost: 1
+  - name: em5
+    description: link2
+    ip: 192.168.102.1/30
+    ospf_area: 1
+    ospf_cost: 1
+  - name: em6
+    description: host1
+    ip: 192.168.1.254/24

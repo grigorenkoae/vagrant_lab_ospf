@@ -1,0 +1,60 @@
+
+system {
+    host-name {{ hostname }};
+}
+
+interfaces {
+{% for interface in interfaces %}
+    {{ interface.name }} {
+        {% if interface.description is defined %}
+        description {{ interface.description }};
+        {% endif %}
+        {% if interface.ip is defined %}
+        unit 0 {
+            family inet {
+                address {{ interface.ip }};
+            }
+        }
+        {% endif %}        
+    }
+{% endfor %}
+}
+
+protocols {
+    ospf {
+        export DIRECT
+        {% for interface in interfaces %}
+            {% if interface.ospf_area is defined %}
+            area {{ interface.ospf_area }} {
+                interface {{ interface.name}}.0 {
+                {% if interface.ospf_cost is defined %}
+                metric {{ interface.ospf_cost }};
+                {% endif %}
+                }
+            }
+            {% endif %}
+        {% endfor %}
+    }
+}
+
+routing-options {
+    forwarding-table {
+        export PFE-LB;
+    }
+}
+
+policy-options {
+    policy-statement PFE-LB {
+        then {
+            load-balance per-packet;
+        }
+    }
+    policy-statement DIRECT {
+        from {
+            protocol direct;
+        }
+        then {
+            accept;
+        }
+    }
+}
